@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ADMIN PAGE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  align-items: flex-start;
+  padding: 40px 20px;
+  font-family: 'Inter', sans-serif;
+  flex-direction: row;
+  overflow-x: auto; /* Prevent page scrolling */
+
+}
+
+ .products, .productForm {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  height: 800px; /* Fixed height so both match */
+  width: 100%;
+  max-width: 400px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+h1 {
+  color: #333;
+  font-weight: 600;
+  font-size: 24px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.photo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.photo-preview {
+  background-color: whitesmoke;
+  width: 250px;
+  height: 250px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #555;
+  overflow: hidden;
+}
+
+#Btn {
+  padding: 10px 20px;
+  background-color: #764ba2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+form input,
+form textarea,
+form select {
+  width: 95%;
+  padding: 12px;
+  align-items: center;
+  margin-bottom: 15px;
+  border: 2px solid #4995e2;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.flex {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.flex input, .flex select {
+  flex: 1;
+}
+
+.submit-btn {
+  text-align: center;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 50%;
+}
+
+.row{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+#Go{
+   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 200px;
+  font-size: 16px;
+  border: none;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 5px;
+  margin-top: 10px;
+}
+.product-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background-color: #f9f9f9;
+}
+
+.product-card h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.product-card p {
+  margin: 5px 0;
+  color: #666;
+}
+
+.product-card button {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 5px;
+  margin-top: 10px;
+}
+
+.product-card button:last-child {
+  background-color: #e74c3c;
+}
+
+.ptext{
+  font-size: 12px;
+}
+
+#productList {
+  flex: 1; /* Take remaining space */
+  overflow: hidden; /* Scroll inside */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.error {
+  color: #e74c3c;
+  text-align: center;
+  padding: 20px;
+}
+
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .productForm, .products {
+    max-width: 100%;
+  }
+}
+</style>
+</head>
+<body>
+  <div class="products">
+    <div class="row">
+    <h1>Product List</h1>
+    <button id="Go" class="View">View Products</button>
+    </div>
+    <div id="productList" class="loading">Loading products...</div>
+  </div>
+
+  <div class="productForm">
+    <div class="header-row">
+      <h2>ADMIN PAGE</h2>
+      <div class="button-group">
+        <button type="button" class="btn" onclick="refreshForm()">Refresh</button>
+      </div>
+    </div>
+
+    <div class="photo-row">
+      <div class="photo-preview" id="Photoarea">Photo</div>
+      <button id="Btn">Tap for Photo</button>
+    </div>
+
+    <form id="productForm">
+      <input type="text" id="productName" placeholder="Weka jina la bidhaa" required />
+      <textarea id="productDescription" placeholder="Maelezo ya Bidhaa" required></textarea>
+
+      <div class="flex">
+        <input type="text" id="productSize" placeholder="Size" required />
+        <input type="text" id="productBrand" placeholder="Brand" required />
+        <input type="number" id="productPrice" placeholder="Bei" required step="0.01" />
+      </div>
+      
+      <select id="productCurrency" required>
+        <option value="">Currency</option>
+        <option value="TZS">TZS</option>
+      </select>
+      
+
+      <div class="submit-btn">
+        <button type="submit" class="btn-primary">Submit</button>
+      </div>
+    </form>
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const photoArea = document.getElementById("Photoarea");
+    const photoBtn = document.getElementById("Btn");
+    const productForm = document.getElementById("productForm");
+    const productList = document.getElementById("productList");
+
+    let selectedFile = null;
+    let editingProductId = null;
+    let currentImageUrl = null;
+
+    const ADMIN_TOKEN = "my-secret-admin-token"; // SAME AS BACKEND checkAdminHeader
+
+    // File picker element
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.name = "image";   // ✅ REQUIRED
+    fileInput.style.display = "none";
+    document.body.appendChild(fileInput);
+
+    photoBtn.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", () => {
+        if (!fileInput.files[0]) return;
+
+        selectedFile = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            photoArea.innerHTML = `<img src="${e.target.result}" style="max-width:100%;">`;
+        };
+        reader.readAsDataURL(selectedFile);
+    });
+
+    // ---------------------- LOAD PRODUCTS ----------------------
+    async function loadProducts() {
+        productList.innerHTML = "Loading...";
+
+        const res = await fetch("http://localhost:4000/api/products");
+        const products = await res.json();
+
+        productList.innerHTML = "";
+
+        products.forEach(product => {
+            const card = document.createElement("div");
+            card.className = "product-card";
+
+            card.innerHTML = `
+		<div class="all" style="display: flex; align-items: center; gap: 15px; width: 350px; overflow-y: auto;">
+                <img src="${product.imageUrl}" style="width:90px;height:90px;object-fit:cover;border-radius:6px;"/>
+		<div class="ptext">
+                <h3>${product.productName}</h3>
+           <!---<p>${product.productDescription}</p>----->
+                <p><strong>${product.productPrice} TZS</strong></p>
+		</div>
+		<div class="buttons">
+                <button onclick="editProduct('${p._id}')">Edit</button>
+                <button onclick="deleteProduct('${p._id}')">Delete</button>
+		</div>
+            `;
+
+            productList.appendChild(card);
+        });
+    }
+
+    // ---------------------- CREATE / UPDATE PRODUCT ----------------------
+    productForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData();
+
+        formData.append("productName", document.getElementById("productName").value);
+        formData.append("productDescription", document.getElementById("productDescription").value);
+        formData.append("productSize", document.getElementById("productSize").value);
+        formData.append("productBrand", document.getElementById("productBrand").value);
+        formData.append("productPrice", document.getElementById("productPrice").value);
+	formData.append("ownerId", localStorage.getItem("userId"));
+
+        if (selectedFile) {
+            formData.append("image", selectedFile);
+        } else if (currentImageUrl) {
+            formData.append("imageUrl", currentImageUrl);
+        }
+
+        let url = "http://localhost:4000/api/products";
+        let method = "POST";
+
+        if (editingProductId) {
+            url = `http://localhost:4000/api/products/${editingProductId}`;
+            method = "PUT";
+        }
+
+        const res = await fetch(url, {
+            method,
+            headers: {
+                "x-admin-token": ADMIN_TOKEN
+            },
+            body: formData
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) return alert(data.error);
+
+        alert(editingProductId ? "Updated!" : "Created!");
+
+        resetForm();
+        loadProducts();
+    });
+
+    // ---------------------- EDIT PRODUCT ----------------------
+    window.editProduct = async (id) => {
+        const res = await fetch(`http://localhost:4000/api/products/${id}`);
+        const p = await res.json();
+
+        editingProductId = id;
+
+        document.getElementById("productName").value = p.productName;
+        document.getElementById("productDescription").value = p.productDescription;
+        document.getElementById("productSize").value = p.productSize;
+        document.getElementById("productBrand").value = p.productBrand;
+        document.getElementById("productPrice").value = p.productPrice;
+
+        currentImageUrl = product.imageUrl;
+
+        photoArea.innerHTML = `<img src="${product.imageUrl}" style="max-width:100%;">`;
+    };
+
+    // ---------------------- DELETE PRODUCT ----------------------
+    window.deleteProduct = async (id) => {
+        if (!confirm("Delete this?")) return;
+
+        const res = await fetch(`http://localhost:4000/api/products/${id}`, {
+            method: "DELETE",
+            headers: { "x-admin-token": ADMIN_TOKEN }
+        });
+
+        if (res.ok) {
+            alert("Deleted");
+            loadProducts();
+        }
+    };
+
+    function resetForm() {
+        selectedFile = null;
+        editingProductId = null;
+        currentImageUrl = null;
+        productForm.reset();
+        photoArea.innerHTML = "Photo";
+    }
+
+    loadProducts();
+});
+
+// ---------------------- TO PRODUCT PAGE----------------------
+document.getElementById("Go").addEventListener("click", function() {
+    window.location.href = "product update.html"; 
+});
+</script>
+</body>
+</html>

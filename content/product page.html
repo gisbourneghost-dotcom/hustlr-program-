@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Products - Full Screen Display</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .product-container {
+            height: 100vh;
+            width: 100%;
+            position: relative;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+        }
+
+        .product-slide {
+            height: 100vh;
+            width: 100%;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+        
+        .product-image-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-info {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+        }
+        
+        .product-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .product-price {
+            font-size: 28px;
+            font-weight: 700;
+            color: #4cd964;
+            background: rgba(0,0,0,0.6);
+            padding: 10px 15px;
+            border-radius: 10px;
+            position: absolute;
+            top: -30px;
+            right: 20px;
+        }
+
+        .product-description {
+            margin-top: 10px;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .order-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            border: none;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .navigation-dots {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .dot.active {
+            background: white;
+            transform: scale(1.3);
+        }
+
+        .loading, .no-products {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="productDisplay" class="product-container">
+        <div class="loading">Loading products...</div>
+    </div>
+
+    <div class="navigation-dots" id="navDots"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    const productDisplay = document.getElementById('productDisplay');
+    const navDots = document.getElementById('navDots');
+
+    let products = [];
+    let currentIndex = 0;
+
+    async function loadProducts() {
+        try {
+            const response = await fetch('http://localhost:4000/products');
+            products = await response.json();
+            renderProducts();
+        } catch {
+            productDisplay.innerHTML = `<div class="no-products"><h2>Error loading products</h2></div>`;
+        }
+    }
+
+    function renderProducts() {
+        if (products.length === 0) {
+            productDisplay.innerHTML = `<div class="no-products"><h2>No products</h2></div>`;
+            return;
+        }
+
+        productDisplay.innerHTML = "";
+        navDots.innerHTML = "";
+
+        products.forEach((product, index) => {
+
+            const slide = document.createElement('div');
+            slide.className = 'product-slide';
+
+            slide.innerHTML = `
+                <div class="product-image-container">
+                    <img src="${product.imageUrl}" class="product-image">
+                </div>
+
+                <div class="product-info">
+                    <h2 class="product-title">${product.name}</h2>
+                    <div class="product-price">${product.price} ${product.currency}</div>
+                    <p class="product-description">${product.description}</p>
+
+                    <button class="order-btn" onclick="orderProduct('${product._id}')">Order Now</button>
+                </div>
+            `;
+
+            productDisplay.appendChild(slide);
+
+            const dot = document.createElement('div');
+            dot.className = 'dot';
+            if (index === 0) dot.classList.add('active');
+            dot.addEventListener('click', () => goToSlide(index));
+            navDots.appendChild(dot);
+        });
+    }
+
+    function goToSlide(index) {
+        currentIndex = index;
+        productDisplay.scrollTo({
+            top: index * window.innerHeight,
+            behavior: "smooth"
+        });
+
+        document.querySelectorAll(".dot").forEach((dot, i) => {
+            dot.classList.toggle("active", i === index);
+        });
+    }
+
+    window.orderProduct = function(productId) {
+        const product = products.find(p => p._id === productId);
+        alert("Order: " + product.name);
+    };
+
+    loadProducts();
+});
+</script>
+</body>
+</html>
