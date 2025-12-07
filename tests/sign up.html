@@ -75,14 +75,18 @@
         #submit-btn:hover {
             transform: translateY(-2px);
         }
-        .signup-link {
+
+	.signin-link {
+            color: #666;
             text-align: center;
             margin-top: 20px;
-            color: #666;
         }
-        .signup-link a {
+      
+        .signin-link a {
             color: #667eea;
+            text-align: center;
             text-decoration: none;
+            margin-top: 20px;
             font-weight: 500;
         }
     </style>
@@ -110,6 +114,9 @@
                 <button type="submit" id="submit-btn">Submit</button>
             </div>
         </form>
+	<div class="signin-link">
+            <p>Ingia kwenye akaunti yako<br><a href="sign in.html">Ingia sign in page</a></p>
+        </div>
         </div>
     <script>
 document.getElementById("signup-form").addEventListener("submit", async function (e) {
@@ -132,7 +139,7 @@ document.getElementById("signup-form").addEventListener("submit", async function
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
                 email: email, 
-                password: password 
+                password: password
             })
         });
 
@@ -151,7 +158,6 @@ document.getElementById("signup-form").addEventListener("submit", async function
         window.location.href = "info.html";
 
     } catch (error) {
-        console.error("Signup error:", error);
         alert("Kuna tatizo. Jaribu tena.");
     }
 });
