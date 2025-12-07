@@ -16,13 +16,16 @@ body {
   padding: 40px 20px;
   font-family: 'Inter', sans-serif;
   flex-direction: row;
+  overflow-x: auto; /* Prevent page scrolling */
+
 }
 
-.productForm {
+ .products, .productForm {
   background: white;
   padding: 30px;
   border-radius: 15px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  height: 800px; /* Fixed height so both match */
   width: 100%;
   max-width: 400px;
 }
@@ -127,14 +130,6 @@ form textarea {
   width: 50%;
 }
 
-.products{
-   background: white;
-  padding: 30px;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  width: 100%;
-  max-width: 400px;
-}
 .row{
   display: flex;
   flex-direction: row;
@@ -142,30 +137,23 @@ form textarea {
 }
 
 #Go{
-   background-color: #667eea;
+   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  font-weight: 200px;
   font-size: 16px;
   border: none;
-  padding: 5px 12px;
+  padding: 2px 8px;
   border-radius: 4px;
   cursor: pointer;
   margin-right: 5px;
   margin-top: 10px;
 }
-
 .product-card {
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 15px;
   margin-bottom: 15px;
   background-color: #f9f9f9;
-}
-
-.product-card img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 4px;
-  margin-bottom: 10px;
 }
 
 .product-card h3 {
@@ -191,6 +179,18 @@ form textarea {
 
 .product-card button:last-child {
   background-color: #e74c3c;
+}
+
+.ptext{
+  font-size: 12px;
+}
+
+#productList {
+  flex: 1; /* Take remaining space */
+  overflow: hidden; /* Scroll inside */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
 }
 
 .loading {
@@ -251,9 +251,6 @@ form textarea {
       
       <select id="productCurrency" required>
         <option value="">Currency</option>
-        <option value="USD">USD</option>
-        <option value="EUR">EUR</option>
-        <option value="GBP">GBP</option>
         <option value="TZS">TZS</option>
       </select>
       
@@ -265,13 +262,6 @@ form textarea {
   </div>
 
 <script>
-///////////////////////////////
-// CONFIG
-///////////////////////////////
-const API_BASE = "http://localhost:4000";
-const CLOUD_NAME = "dbq2swcjo";
-const UPLOAD_PRESET = "Website_post";
-
 document.addEventListener("DOMContentLoaded", () => {
     const photoArea = document.getElementById("Photoarea");
     const photoBtn = document.getElementById("Btn");
@@ -282,144 +272,98 @@ document.addEventListener("DOMContentLoaded", () => {
     let editingProductId = null;
     let currentImageUrl = null;
 
-    // Hidden file input
+    const ADMIN_TOKEN = "my-secret-admin-token"; // SAME AS BACKEND checkAdminHeader
+
+    // File picker element
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept = "image/*";
+    fileInput.name = "image";   // ✅ REQUIRED
     fileInput.style.display = "none";
     document.body.appendChild(fileInput);
 
-    // Open file picker
-    photoBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        fileInput.click();
-    });
+    photoBtn.addEventListener("click", () => fileInput.click());
 
-    // Show preview
     fileInput.addEventListener("change", () => {
-        if (!fileInput.files || !fileInput.files[0]) return;
+        if (!fileInput.files[0]) return;
 
         selectedFile = fileInput.files[0];
         const reader = new FileReader();
-
         reader.onload = (e) => {
-            photoArea.innerHTML = `
-                <img src="${e.target.result}" style="max-width:100%; height:auto;" />
-            `;
+            photoArea.innerHTML = `<img src="${e.target.result}" style="max-width:100%;">`;
         };
-
         reader.readAsDataURL(selectedFile);
     });
 
-    ///////////////////////////////////////////
-    // CLOUDINARY UPLOAD
-    ///////////////////////////////////////////
-    async function uploadToCloudinary(file) {
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("upload_preset", UPLOAD_PRESET);
-
-        const res = await fetch(
-            `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-            {
-                method: "POST",
-                body: fd
-            }
-        );
-
-        if (!res.ok) {
-            throw new Error("Cloudinary upload failed");
-        }
-
-        const data = await res.json();
-        return data.secure_url;
-    }
-
-    ///////////////////////////////////////////
-    // LOAD PRODUCTS
-    ///////////////////////////////////////////
+    // ---------------------- LOAD PRODUCTS ----------------------
     async function loadProducts() {
-        productList.innerHTML = `<div class="loading">Loading...</div>`;
+        productList.innerHTML = "Loading...";
 
-        try {
-            const res = await fetch(`${API_BASE}/products`);
-            const products = await res.json();
+        const res = await fetch("http://localhost:4000/api/products");
+        const products = await res.json();
 
-            productList.innerHTML = "";
+        productList.innerHTML = "";
 
-            if (products.length === 0) {
-                productList.innerHTML = `<div class="loading">No products yet</div>`;
-                return;
-            }
+        products.forEach(product => {
+            const card = document.createElement("div");
+            card.className = "product-card";
 
-            products.forEach((p) => {
-                const card = document.createElement("div");
-                card.className = "product-card";
+            card.innerHTML = `
+		<div class="all" style="display: flex; align-items: center; gap: 15px; width: 350px; overflow-y: auto;">
+                <img src="${product.imageUrl}" style="width:90px;height:90px;object-fit:cover;border-radius:6px;"/>
+		<div class="ptext">
+                <h3>${product.productName}</h3>
+           <!---<p>${product.productDescription}</p>----->
+                <p><strong>${product.productPrice} TZS</strong></p>
+		</div>
+		<div class="buttons">
+                <button onclick="editProduct('${p._id}')">Edit</button>
+                <button onclick="deleteProduct('${p._id}')">Delete</button>
+		</div>
+            `;
 
-                card.innerHTML = `
-                    <img src="${p.imageUrl}" />
-                    <h3>${p.title}</h3>
-                    <p>${p.description}</p>
-                    <p><strong>${p.price} ${p.currency}</strong></p>
-
-                    <button onclick="editProduct('${p._id}')">Edit</button>
-                    <button onclick="deleteProduct('${p._id}')">Delete</button>
-                `;
-
-                productList.appendChild(card);
-            });
-        } catch (err) {
-            productList.innerHTML = `<div class="error">Error loading products</div>`;
-        }
+            productList.appendChild(card);
+        });
     }
 
-    ///////////////////////////////////////////
-    // CREATE OR UPDATE PRODUCT
-    ///////////////////////////////////////////
+    // ---------------------- CREATE / UPDATE PRODUCT ----------------------
     productForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        let imageUrl = currentImageUrl;
+        const formData = new FormData();
 
-        // If new picture chosen → upload to Cloudinary
+        formData.append("productName", document.getElementById("productName").value);
+        formData.append("productDescription", document.getElementById("productDescription").value);
+        formData.append("productSize", document.getElementById("productSize").value);
+        formData.append("productBrand", document.getElementById("productBrand").value);
+        formData.append("productPrice", document.getElementById("productPrice").value);
+	formData.append("ownerId", localStorage.getItem("userId"));
+
         if (selectedFile) {
-            try {
-                imageUrl = await uploadToCloudinary(selectedFile);
-            } catch (err) {
-                alert("Image upload failed");
-                return;
-            }
+            formData.append("image", selectedFile);
+        } else if (currentImageUrl) {
+            formData.append("imageUrl", currentImageUrl);
         }
 
-        const body = {
-            title: document.getElementById("productName").value,
-            description: document.getElementById("productDescription").value,
-            metadata: {
-                size: document.getElementById("productSize").value,
-                brand: document.getElementById("productBrand").value
-            },
-            price: document.getElementById("productPrice").value,
-            currency: document.getElementById("productCurrency").value,
-            imageUrl
-        };
-
-        let url = `${API_BASE}/admin/products`;
+        let url = "http://localhost:4000/api/products";
         let method = "POST";
 
         if (editingProductId) {
-            url = `${API_BASE}/admin/products/${editingProductId}`;
+            url = `http://localhost:4000/api/products/${editingProductId}`;
             method = "PUT";
         }
 
         const res = await fetch(url, {
             method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
+            headers: {
+                "x-admin-token": ADMIN_TOKEN
+            },
+            body: formData
         });
 
         const data = await res.json();
 
-        if (!res.ok) return alert(data.error || "Failed");
+        if (!res.ok) return alert(data.error);
 
         alert(editingProductId ? "Updated!" : "Created!");
 
@@ -427,39 +371,31 @@ document.addEventListener("DOMContentLoaded", () => {
         loadProducts();
     });
 
-    ///////////////////////////////////////////
-    // EDIT PRODUCT
-    ///////////////////////////////////////////
+    // ---------------------- EDIT PRODUCT ----------------------
     window.editProduct = async (id) => {
-        const res = await fetch(`${API_BASE}/products/${id}`);
+        const res = await fetch(`http://localhost:4000/api/products/${id}`);
         const p = await res.json();
 
         editingProductId = id;
 
-        document.getElementById("productName").value = p.title;
-        document.getElementById("productDescription").value = p.description;
-        document.getElementById("productSize").value = p.metadata?.size || "";
-        document.getElementById("productBrand").value = p.metadata?.brand || "";
-        document.getElementById("productPrice").value = p.price;
-        document.getElementById("productCurrency").value = p.currency;
+        document.getElementById("productName").value = p.productName;
+        document.getElementById("productDescription").value = p.productDescription;
+        document.getElementById("productSize").value = p.productSize;
+        document.getElementById("productBrand").value = p.productBrand;
+        document.getElementById("productPrice").value = p.productPrice;
 
-        currentImageUrl = p.imageUrl;
+        currentImageUrl = product.imageUrl;
 
-        photoArea.innerHTML = `
-            <img src="${p.imageUrl}" style="max-width:100%; height:auto;" />
-        `;
-
-        selectedFile = null;
+        photoArea.innerHTML = `<img src="${product.imageUrl}" style="max-width:100%;">`;
     };
 
-    ///////////////////////////////////////////
-    // DELETE PRODUCT
-    ///////////////////////////////////////////
+    // ---------------------- DELETE PRODUCT ----------------------
     window.deleteProduct = async (id) => {
         if (!confirm("Delete this?")) return;
 
-        const res = await fetch(`${API_BASE}/admin/products/${id}`, {
-            method: "DELETE"
+        const res = await fetch(`http://localhost:4000/api/products/${id}`, {
+            method: "DELETE",
+            headers: { "x-admin-token": ADMIN_TOKEN }
         });
 
         if (res.ok) {
@@ -468,19 +404,20 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    ///////////////////////////////////////////
-    // RESET FORM
-    ///////////////////////////////////////////
     function resetForm() {
-        productForm.reset();
-        photoArea.innerHTML = "Photo";
         selectedFile = null;
         editingProductId = null;
         currentImageUrl = null;
+        productForm.reset();
+        photoArea.innerHTML = "Photo";
     }
 
-    // Load products initially
     loadProducts();
+});
+
+// ---------------------- TO PRODUCT PAGE----------------------
+document.getElementById("Go").addEventListener("click", function() {
+    window.location.href = "product update.html"; 
 });
 </script>
 </body>
