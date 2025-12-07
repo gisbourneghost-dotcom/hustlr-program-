@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import { v2 as cloudinary } from "cloudinary";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { auth } from "./middleware/auth.js";
 
 dotenv.config();
 
@@ -46,25 +47,25 @@ try {
 // --- Models
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
-  password: String,                    // <-- single field: password
-  name1: String,
-  name2: String,
-  Phoneno: String,
-  location_info: String,
-  ownerPhone: String,
+  password: String,
+
+  firstName: String,
+  lastName: String,
+  location: String,
+  ownerphone: String,
 });
 
 const User = mongoose.model("User", userSchema);
 
 const productSchema = new mongoose.Schema({
   ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-  name: String,
-  description: String,
-  size: String,
-  brand: String,
-  price: String,
+  productName: String,
+  productDescription: String,
+  productSize: String,
+  productBrand: String,
+  productPrice: String,
   imageUrl: String,
-  ownerWhatsApp: String,
+  ownerphone: String,
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -153,6 +154,7 @@ app.post("/api/signup", async (req, res) => {
     const user = new User({ email, password: hashed });
     await user.save();
 
+    //Create token here
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "7d" });
 
     res.json({
@@ -197,104 +199,114 @@ app.post("/api/signin", async (req, res) => {
 });
 
 //------CREATE PROFILE----------
-app.post("/api/profile", async (req, res) => {
+app.post("/api/profile", auth, async (req, res) => {
   try {
-    const { name1, name2, password, Phoneno, location, email } = req.body;
+    const userId = req.user._id; // From JWT
 
-    if (!email || !password || !name1 || !name2 || !Phoneno || !location)
-      return res.status(400).json({ error: "All fields are required" });
+    const { firstName, lastName, ownerphone, location } = req.body;
 
-    // find user by email
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ error: "User not found" });
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        firstName: firstName,
+        lastName: lastName,
+        ownerphone: ownerphone,
+        location: location
+      },
+      { new: true }
+    );
 
-    // validate password
-    const good = await bcrypt.compare(password, user.Userpassword);
-    if (!good) return res.status(400).json({ error: "Wrong password" });
-
-    // update profile info
-    user.name1 = name1;
-    user.name2 = name2;
-    user.Phoneno = Phoneno;
-    user.location_info = location;
-
-    await user.save();
-
-    res.json({ success: true, message: "Profile updated", user });
+    res.json({
+      success: true,
+      message: "Profile updated",
+      user: updatedUser
+    });
 
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 });
 
+// ---------- GET ALL PRODUCTS ----------
+app.get("/api/products", async (req, res) => {
+  try {
+    const products = await Product.find().sort({ createdAt: -1 }).lean();
+    res.json(products);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
-// -------- CREATE / UPDATE / DELETE PRODUCTS (admin header protected) --------
+
+// ---------- CREATE PRODUCT ----------
 app.post("/api/products", checkAdminHeader, upload.single("image"), async (req, res) => {
-  try {
-    let imageUrl = null;
+    try {
+        let imageUrl = req.body.imageUrl || null;
 
-    if (req.file && req.file.buffer) {
-      const cloudRes = await uploadBufferToCloudinary(req.file.buffer, "shopper_products");
-      imageUrl = cloudRes.secure_url;
+        if (req.file) {
+            const cloudRes = await uploadBufferToCloudinary(
+                req.file.buffer,
+                "shopper_products"
+            );
+            imageUrl = cloudRes.secure_url;
+        }
+
+        const product = await Product.create({
+            productName: req.body.productName,
+            productDescription: req.body.productDescription,
+            productSize: req.body.productSize,
+            productBrand: req.body.productBrand,
+            productPrice: req.body.productPrice,
+            imageUrl
+        });
+
+        res.status(201).json(product);
+    } catch (err) {
+        res.status(500).json({ error: "Create failed", details: String(err) });
     }
-
-    if (!imageUrl && req.body.imageUrl) imageUrl = req.body.imageUrl;
-
-    const newProduct = await Product.create({
-      ownerId: req.body.ownerId || null,
-      name: req.body.name,
-      description: req.body.description,
-      size: req.body.size,
-      brand: req.body.brand,
-      price: req.body.price,
-      imageUrl,
-      ownerWhatsApp: req.body.ownerWhatsApp || "",
-    });
-
-    res.status(201).json(newProduct);
-  } catch (err) {
-    console.error("Create product error:", err);
-    res.status(500).json({ error: "Create failed", details: String(err) });
-  }
 });
 
+// ---------- UPDATE PRODUCT ----------
 app.put("/api/products/:id", checkAdminHeader, upload.single("image"), async (req, res) => {
-  try {
-    const updates = {
-      name: req.body.name,
-      description: req.body.description,
-      size: req.body.size,
-      brand: req.body.brand,
-      price: req.body.price,
-      ownerWhatsApp: req.body.ownerWhatsApp,
-    };
+    try {
+        let updates = {
+            productName: req.body.productName,
+            productDescription: req.body.productDescription,
+            productSize: req.body.productSize,
+            productBrand: req.body.productBrand,
+            productPrice: req.body.productPrice,
+        };
 
-    if (req.file && req.file.buffer) {
-      const cloudRes = await uploadBufferToCloudinary(req.file.buffer, "shopper_products");
-      updates.imageUrl = cloudRes.secure_url;
-    } else if (req.body.imageUrl) {
-      updates.imageUrl = req.body.imageUrl;
+        if (req.file) {
+            const cloudRes = await uploadBufferToCloudinary(req.file.buffer, "shopper_products");
+            updates.imageUrl = cloudRes.secure_url;
+        } else if (req.body.imageUrl) {
+            updates.imageUrl = req.body.imageUrl;
+        }
+
+        const p = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });
+        if (!p) return res.status(404).json({ error: "Not found" });
+
+        res.json(p);
+    } catch {
+        res.status(500).json({ error: "Update failed" });
     }
-
-    const p = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });
-    if (!p) return res.status(404).json({ error: "Not found" });
-    res.json(p);
-  } catch (err) {
-    console.error("Update product error:", err);
-    res.status(500).json({ error: "Update failed" });
-  }
 });
 
+// ---------- DELETE PRODUCT ----------
 app.delete("/api/products/:id", checkAdminHeader, async (req, res) => {
-  try {
-    const p = await Product.findByIdAndDelete(req.params.id);
-    if (!p) return res.status(404).json({ error: "Not found" });
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Delete product error:", err);
-    res.status(500).json({ error: "Delete failed" });
-  }
+    try {
+        const p = await Product.findByIdAndDelete(req.params.id);
+        if (!p) return res.status(404).json({ error: "Not found" });
+        res.json({ success: true });
+    } catch {
+        res.status(500).json({ error: "Delete failed" });
+    }
 });
+
+
+
 
 // -------- CHECKOUT --------
 app.post("/api/checkout", async (req, res) => {
@@ -305,7 +317,7 @@ app.post("/api/checkout", async (req, res) => {
     const product = await Product.findById(productId).lean();
     if (!product) return res.status(404).json({ error: "Product not found" });
 
-    const ownerNumber = product.ownerWhatsApp || "";
+    const ownerNumber = product.ownerphone || "";
 
     const order = await Order.create({
       productId,
@@ -339,3 +351,4 @@ app.post("/api/checkout", async (req, res) => {
 
 // --- Start
 app.listen(PORT, () => console.log(`Server listening on http://localhost:${PORT}`));
+
