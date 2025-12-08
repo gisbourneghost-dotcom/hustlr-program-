@@ -117,13 +117,13 @@
 
 	        <div id="form" class="Checkoutform" style="margin-bottom: 15px;">
 	            <label>Jina la mnunuzi</label>
-                    <input type="text" id="name" placeholder="Weka jina la lako">
+                    <input type="text" id="Jina la mnunuzi" placeholder="Weka jina la lako">
                
                     <label>Delivery Location </label>
-                    <input type="text" id="location" placeholder="Delivery Location">
+                    <input type="text" id="Delivery Location" placeholder="Delivery Location">
                
-                    <label> Whatsapp Number </label>
-                    <input type="number" id="No" placeholder="weka whatsapp number yako">
+                    <label> Simu ya Mteja(no)</label>
+                    <input type="number" id="Simu ya Mteja(no)" placeholder="weka number yako ya mawasiliano">
                
                 <div id="pay" class="Payment">
                     <label> Payment Option</label>
@@ -153,23 +153,23 @@ if (!product) {
 // 2. Handle checkout button
 document.getElementById("Conbtn").addEventListener("click", async () => {
 
-    const Jina la mnunuzi = document.getElementById("name").value.trim();
-    const deliveryLocation = document.getElementById("location").value.trim();
-    const customerPhone = document.getElementById("No").value.trim();
-    const paymentMethod = document.getElementById("modalPayment").value;
+    const Jina la mnunuzi = document.getElementById("Jina la mnunuzi").value.trim();
+    const Delivery Location = document.getElementById("Delivery Location").value.trim();
+    const Simu ya Mteja(no) = document.getElementById("Simu ya Mteja(no)").value.trim();
+   // const paymentMethod = document.getElementById("modalPayment").value;
 
-    if (!deliveryLocation || !customerPhone) {
-        alert("Please fill all fields.");
+    if (!Jina la mnunuzi || !Delivery Location || !Simu ya Mteja(no)) {
+        alert("Tafadhali jaza taarifa zote ili kuweka order.");
         return;
     }
 
     // Prepare data to send
     const checkoutData = {
         productId: product._id,
-        customerName:customerName,    
-        customerPhone: customerPhone,
-        deliveryLocation: deliveryLocation,
-        paymentMethod: paymentMethod,
+        JIna la mnunuzi:Jina la mnunuzi,    
+        Simu ya Mteja(no):Simu ya Mteja(no),
+        DeliveryLocation: Delivery Location,
+       // paymentMethod: paymentMethod,
         customMessage: ""
     };
 
@@ -198,3 +198,4 @@ document.getElementById("Conbtn").addEventListener("click", async () => {
 </script>
     </body>
         </html>
+
