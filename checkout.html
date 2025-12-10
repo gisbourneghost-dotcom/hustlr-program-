@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CHECKOUT PAGE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+       *{
+        align-items: center;
+        box-sizing: border-box;
+       }
+       label{
+        font-size: 18px;
+        font-weight: 200;
+        align-items: left;
+        gap: 50px;
+        margin-bottom: 5px;
+        display: block;
+        
+       }
+       input,
+       textarea{
+        color: rgb(36, 35, 35);
+        font-size: 16px;
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+       }
+
+       
+       body{
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 50px;
+       }
+       .container{
+        padding: 40px;
+        box-sizing: border-box;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        background: white;
+        border-radius: 15px;
+        width: 100%;
+        max-width: 500px;
+
+       }
+       .totalprice{
+        font-size: 16px;
+        padding: 40px;
+        box-sizing: border-box;
+        width: 200px;
+        height: auto;
+        background: rgb(170, 168, 168);
+        overflow: scroll;
+        }
+        .Order{
+        font-size: 16px;
+        padding: 40px;
+        min-height: 20vh;
+	overflow-y: auto;
+        box-sizing: border-box;
+        width: 100%;
+        background: rgb(255,215,0);
+        margin-bottom: 20px;   
+        }
+        #price{
+            color: red;
+            font-size: 20px;
+            text-align: center;
+        }
+        .buy{
+             text-align: center;
+            margin-top: 20px;
+            align-items: center;
+
+        }
+        #Conbtn{
+             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: rgb(252, 249, 249);
+            align-items: center;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 70%;
+        }
+        header{
+            text-align: center;
+            font-size: 24px;
+            font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+            margin-bottom: 15px;
+            }
+
+         #Conbtn:hover {
+        transform: scale(1.05);
+    }
+
+	#Message {
+	width: 100%;
+	border: 1px solid gray;
+	height: auto;
+}
+    #Demo{
+        width: 200px;
+        color: white;
+        height: auto;
+    }
+     </style>
+        </head>
+        <body>
+            <div id="checkout" class="container">
+                <header> <strong>CHECKOUT PAGE</header>
+                <div id="order" class="Order">
+                    <label style="font-size: 16px;"> Order Summary</label>
+                    <p id="Demo" style="color: black; width:100%;"></p>
+
+		    <label style="font-size: 20px; color:red;">Total Price:</label>
+		    <p id="price"></p>
+                </div>
+
+	        <div id="form" class="Checkoutform" style="margin-bottom: 15px;">
+	            <label>Jina la Mnunuzi</label>
+                    <input type="text" id="Jinalamnunuzi" placeholder="Weka jina la lako">
+               
+                    <label>Delivery Location </label>
+                    <input type="text" id="DeliveryLocation" placeholder="Delivery Location">
+               
+                    <label>  Simu Namba ya Mnunuzi </label>
+                    <input type="number" id="SimuNambayamnunuzi" placeholder="weka whatsapp number yako">
+                    
+                    <div class="Message" style="font-family: 'Inter', sans-serif;"> Message</div>
+                    <textarea id="Message" placeholder="Message kwa muuzaji(unaweza weka au usiweke)"></textarea>
+	            </div>
+               
+                    <div class="buy">
+                    <button id="Conbtn">Confirm Button</button> 
+                </div>
+            </div>
+        <script>
+// 1. Load product data from localStorage (saved from product page)
+const product = JSON.parse(localStorage.getItem("selectedProduct"));
+if (!product) {
+    document.getElementById("Demo").innerText = "No product selected!";
+} else {
+    document.getElementById("Demo").innerHTML = `
+        <ul><li><strong>Product:</strong> ${product.productName}
+        <strong>:</strong> ${product.productPrice} TZS</li></ul>
+    `;
+    document.getElementById("price").innerText = product.productPrice + " TZS";
+}
+
+
+// 2. Handle checkout button
+document.getElementById("Conbtn").addEventListener("click", async () => {
+
+    const Jinalamnunuzi = document.getElementById("Jinalamnunuzi").value.trim();
+    const DeliveryLocation = document.getElementById("DeliveryLocation").value.trim();
+    const SimuNambayamnunuzi = document.getElementById("SimuNambayamnunuzi").value.trim();
+    const Message = document.getElementById("Message").value;
+
+    if (!Jinalamnunuzi || !DeliveryLocation || !SimuNambayamnunuzi) {
+        alert("Tafadhali jaza taarifa zote.");
+        return;
+    }
+
+    // Prepare data to send
+    const checkoutData = {
+        productId: product._id,
+        Jinalamnunuzi:Jinalamnunuzi,    
+        SimuNambayamnunuzi:SimuNambayamnunuzi,
+        DeliveryLocation: DeliveryLocation,
+        Message: Message
+    };
+
+    try {
+        const res = await fetch("http://localhost:4000/api/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(checkoutData)
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+            alert("Checkout failed : " + data.error);
+            return;
+        }
+
+        // 3. Redirect user to WhatsApp
+	if (data.whatsappUrl) {
+        window.location.href = data.whatsappUrl;
+	} else {
+        alert("Order placed but seller has no WhatsApp number.");
+    }
+
+    } catch (err) {
+        alert("Something went wrong.");
+        console.error(err);
+    }
+});
+</script>
+    </body>
+        </html>

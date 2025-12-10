@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Products</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        /* GENERAL PAGE RESET */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #111;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        /* SLIDER CONTAINER */
+        #productDisplay {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* SLIDER TRACK FOR FULL SCREEN SLIDES */
+        .slider-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s ease;
+        }
+
+        .product-slide {
+            width: 100vw;
+            height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: absolute;
+        }
+
+        /* IMAGE AREA */
+        .imagecontainer {
+            text-align: center;
+        }
+        .product-image {
+            width: 100%;
+            height: 340px;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+        .producttitle {
+            margin-top: 12px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        /* DETAILS AREA */
+        .productinfo {
+            padding: 20px;
+        }
+        .productprice {
+            font-size: 22px;
+            color: #00ff9d;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .productdes {
+            margin-bottom: 12px;
+            opacity: 0.8;
+        }
+        .detail-item {
+            margin: 4px 0;
+            opacity: 0.9;
+        }
+
+        /* ORDER BUTTON */
+        .ordersect {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .order-btn {
+            padding: 14px 20px;
+            background: #00c896;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #000;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* NAVIGATION DOTS */
+        #navDots {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            background: #555;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .dot.active {
+            background: #00ff9d;
+        }
+
+        /* SWIPE INDICATOR */
+        #swipeIndicator {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            opacity: 0.7;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="productDisplay"></div>
+    <div id="navDots"></div>
+    <div id="swipeIndicator">Swipe ↑ or ↓</div>
+
+    <script>
+        const productDisplay = document.getElementById('productDisplay');
+        const navDots = document.getElementById('navDots');
+        const swipeIndicator = document.getElementById('swipeIndicator');
+
+        let products = [];
+        let currentIndex = 0;  
+        let startY = 0;
+
+        // LOAD PRODUCTS
+        async function loadProducts() {
+            try {
+                const res = await fetch("http://localhost:4000/api/products");
+                products = await res.json();
+                renderProducts();
+            } catch (err) {
+                console.log("LOAD ERROR:", err);
+            }
+        }
+
+        // RENDER PRODUCT SLIDER
+        function renderProducts() {
+            productDisplay.innerHTML = "";
+            navDots.innerHTML = "";
+
+            const track = document.createElement("div");
+            track.classList.add("slider-track");
+            productDisplay.appendChild(track);
+
+            products.forEach((product, index) => {
+                const slide = document.createElement("div");
+                slide.classList.add("product-slide");
+                slide.style.top = `${index * 100}vh`;
+
+                slide.innerHTML = `
+                    <div class="imagecontainer">
+                        <img src="${product.imageUrl}" class="product-image">
+                        <h2 class="producttitle">${product.productName}</h2>
+                    </div>
+
+                    <div class="productinfo">
+                        <div class="productprice">${product.productPrice} TZS</div>
+                        <p class="productdes">${product.productDescription}</p>
+
+                        <div class="product-details">
+                            ${product.productSize ? `<div class="detail-item">Size: ${product.productSize}</div>` : ""}
+                            ${product.productBrand ? `<div class="detail-item">Brand: ${product.productBrand}</div>` : ""}
+                        </div>
+
+                        <div class="ordersect">
+                            <button class="order-btn" onclick="orderProduct('${product._id}')">Order Now</button>
+                        </div>
+                    </div>
+                `;
+
+                track.appendChild(slide);
+
+                // dots
+                const dot = document.createElement("div");
+                dot.classList.add("dot");
+                if (index === 0) dot.classList.add("active");
+                dot.addEventListener("click", () => navigateToProduct(index));
+                navDots.appendChild(dot);
+            });
+
+            updateSliderPosition();
+            setupSwipeEvents();
+        }
+
+        // UPDATE SLIDE POSITION
+        function updateSliderPosition() {
+            const track = document.querySelector(".slider-track");
+            track.style.transform = `translateY(-${currentIndex * 100}vh)`;
+
+            const dots = document.querySelectorAll(".dot");
+            dots.forEach(d => d.classList.remove("active"));
+            dots[currentIndex].classList.add("active");
+        }
+
+        // GO TO SPECIFIC SLIDE
+        function navigateToProduct(index) {
+            currentIndex = index;
+            updateSliderPosition();
+        }
+
+        // SWIPE GESTURE
+        function setupSwipeEvents() {
+            productDisplay.addEventListener("touchstart", e => {
+                startY = e.touches[0].clientY;
+            });
+
+            productDisplay.addEventListener("touchmove", e => {
+                const endY = e.touches[0].clientY;
+                const diff = startY - endY;
+
+                if (Math.abs(diff) > 50) {
+                    if (diff > 0 && currentIndex < products.length - 1) currentIndex++;
+                    else if (diff < 0 && currentIndex > 0) currentIndex--;
+                    updateSliderPosition();
+                    startY = endY;
+                }
+            });
+        }
+
+        // ORDER BUTTON → CHECKOUT PAGE
+       function orderProduct(id) {
+    const product = products.find(product => product._id === id);
+    if (!product) {
+        alert("Product not found!");
+        return;
+    }
+
+    // Save to localStorage
+    localStorage.setItem("selectedProduct", JSON.stringify(product));
+
+    // Go to checkout page
+    window.location.href = "checkout.html";
+}
+loadProducts();
+
+</script>
+
+</body>
+</html>
