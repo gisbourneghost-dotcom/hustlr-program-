@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Account</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<style>
+/* Your original styling is untouched */
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+.account { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 100%; max-width: 500px; }
+h1 { text-align: center; color: #333; margin-bottom: 30px; font-weight: 600; }
+label { display: block; margin-bottom: 8px; color: #555; font-weight: 500; }
+input { width: 100%; padding: 12px 15px; border: 2px solid #4995e2; border-radius: 8px; font-size: 16px; margin-bottom: 20px; }
+button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 15px; border-radius: 8px; font-size: 18px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; }
+.login-link { text-align: center; margin-top: 20px; font-size: 14px; color: #555; }
+.login-link a { color: #764ba2; text-decoration: none; font-weight: 500; }
+#storeLinkMessage {
+    text-align: center;
+    color: #008000;
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #008000;
+    background-color: #e6ffe6;
+    border-radius: 8px;
+    word-wrap: break-word; /* Ensure the link doesn't overflow */
+}
+#storeLinkAnchor {
+    font-weight: bold;
+}
+</style>
+</head>
+<body>
+
+<div class="account">
+    <h1>Kamilisha Profile Yako</h1>
+    <p id="storeLinkMessage" style="display: none;">
+        **Store Link:** <a id="storeLinkAnchor" href="#" target="_blank"></a>
+    </p>
+
+    <form id="createAccountForm">
+        <label for="firstName">First Name</label>
+        <input type="text" id="firstName" required>
+
+        <label for="lastName">Last Name</label>
+        <input type="text" id="lastName" required>
+
+        <label for="ownerphone">Whatsapp Number (Used for Orders)</label>
+        <input type="number" id="ownerphone" required>
+
+        <label for="location">Location</label>
+        <input type="text" id="location" required>
+
+        <button id="Sbmt" type="submit">Submit</button>
+    </form>
+
+    <div class="login-link">
+        <p>Tayari una akaunti? <a href="admin.html">Ingia hapa</a></p>
+    </div>
+</div>
+
+<script>
+document.getElementById("createAccountForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const data = {
+        firstName: document.getElementById("firstName").value.trim(),
+        lastName: document.getElementById("lastName").value.trim(),
+        ownerphone: document.getElementById("ownerphone").value.trim(),
+        location: document.getElementById("location").value.trim()
+    };
+
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
+        alert("Not authenticated. Please sign in again.");
+        window.location.href = "sign in.html";
+        return;
+    }
+    
+    // Simple frontend validation
+    if (!data.firstName || !data.lastName || !data.ownerphone) {
+        alert("Tafadhali jaza Jina la kwanza, la mwisho na namba ya simu.");
+        return;
+    }
+
+    const response = await fetch("http://localhost:4000/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json",
+		    "Authorization": "Bearer " + token
+	},
+        body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+
+    // FIX START: Robust check to prevent reading 'slug' from null
+    if (result.success && result.user && result.user.slug) { 
+        alert("Profile imekamilika! Store link generated.");
+
+        // Update local storage with full user info including slug
+        localStorage.setItem("loggedUser", JSON.stringify(result.user));
+
+        // Display the store link (This logic was missing and caused the error when manually added without the check)
+        const slug = result.user.slug;
+        const storeUrl = `product update.html?store=${slug}`;
+        
+        const storeLinkAnchor = document.getElementById("storeLinkAnchor");
+        storeLinkAnchor.href = storeUrl;
+        storeLinkAnchor.textContent = `${window.location.origin}/product update.html?store=${slug}`; 
+        
+        document.getElementById("storeLinkMessage").style.display = 'block';
+
+        // Redirect to admin after a few seconds
+        setTimeout(() => {
+            window.location.href = "admin.html";
+        }, 4000);
+
+    } else {
+        // Use result.error from the server if available, otherwise a generic error
+        alert("Kuna kosa: " + (result.error || "Imeshindikana kukamilisha profile."));
+    }
+    // FIX END
+});
+
+// Auto-populate form on load and display existing slug
+window.onload = function() {
+    const user = JSON.parse(localStorage.getItem("loggedUser"));
+    if (user) {
+        document.getElementById("firstName").value = user.firstName || '';
+        document.getElementById("lastName").value = user.lastName || '';
+        document.getElementById("ownerphone").value = user.ownerphone || '';
+        document.getElementById("location").value = user.location || '';
+        
+        if (user.slug) {
+            const storeUrl = `product update.html?store=${user.slug}`;
+            const storeLinkAnchor = document.getElementById("storeLinkAnchor");
+            storeLinkAnchor.href = storeUrl;
+            storeLinkAnchor.textContent = `${window.location.origin}/product update.html?store=${user.slug}`;
+            document.getElementById("storeLinkMessage").style.display = 'block';
+        }
+    }
+}
+</script>
+</body>
+</html>
