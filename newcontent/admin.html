@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ADMIN PAGE(New)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  align-items: flex-start;
+  padding: 40px 20px;
+  font-family: 'Inter', sans-serif;
+  flex-direction: row;
+  overflow-x: auto; /* Prevent page scrolling */
+
+}
+
+ .products, .productForm {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  height: 800px; /* Fixed height so both match */
+  width: 100%;
+  max-width: 400px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+h1 {
+  color: #333;
+  font-weight: 600;
+  font-size: 24px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.photo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.photo-preview {
+  background-color: whitesmoke;
+  width: 250px;
+  height: 250px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #555;
+  overflow: hidden;
+}
+
+#Btn {
+  padding: 10px 20px;
+  background-color: #764ba2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+form input,
+form textarea,
+form select {
+  width: 95%;
+  padding: 12px;
+  align-items: center;
+  margin-bottom: 15px;
+  border: 2px solid #4995e2;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.flex {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.flex input, .flex select {
+  flex: 1;
+}
+
+.submit-btn {
+  text-align: center;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 50%;
+}
+
+.row{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+#Go{
+   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 200px;
+  font-size: 16px;
+  border: none;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 5px;
+  margin-top: 10px;
+}
+.product-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background-color: #f9f9f9;
+}
+
+.product-card h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.product-card p {
+  margin: 5px 0;
+  color: #666;
+}
+
+.product-card button {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 5px;
+  margin-top: 10px;
+}
+
+.product-card button:last-child {
+  background-color: #e74c3c;
+}
+
+.ptext{
+  font-size: 12px;
+}
+
+#productList {
+  flex: 1; /* Take remaining space */
+  overflow: hidden; /* Scroll inside */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.error {
+  color: #e74c3c;
+  text-align: center;
+  padding: 20px;
+}
+
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .productForm, .products {
+    max-width: 100%;
+  }
+}
+</style>
+</head>
+<body>
+  <div class="products">
+    <div class="row">
+    <h1>Product List</h1>
+    <button id="Go" class="View">View Products</button>
+    </div>
+    <div id="productList" class="loading">Loading products...</div>
+  </div>
+
+  <div class="productForm">
+    <div class="header-row">
+      <h2>ADMIN PAGE</h2>
+      <div class="button-group">
+        <button type="button" class="btn" onclick="refreshForm()">Refresh</button>
+      </div>
+    </div>
+
+    <div class="photo-row">
+      <div class="photo-preview" id="Photoarea">Photo</div>
+      <button id="Btn">Tap for Photo</button>
+    </div>
+
+    <form id="productForm">
+      <input type="text" id="productName" placeholder="Weka jina la bidhaa" required />
+      <textarea id="productDescription" placeholder="Maelezo ya Bidhaa" required></textarea>
+
+      <div class="flex">
+        <input type="text" id="productSize" placeholder="Size" required />
+        <input type="text" id="productBrand" placeholder="Brand" required />
+        <input type="number" id="productPrice" placeholder="Bei" required step="0.01" />
+      </div>
+      
+      <select id="productCurrency" required>
+        <option value="">Currency</option>
+        <option value="TZS">TZS</option>
+      </select>
+      
+
+      <div class="submit-btn">
+        <button type="submit" class="btn-primary">Submit</button>
+      </div>
+    </form>
+  </div>
+
+<script>
+  // Set this when rendering admin page server-side or after fetching profile:
+  // window.ownerSlug = "<owner slug here>";
+  const ownerSlug = window.ownerSlug;
+  const token = localStorage.getItem("authToken");
+
+  const productList = document.getElementById("productList");
+  const productForm = document.getElementById("productForm");
+  const photoArea = document.getElementById("photoArea");
+
+  let selectedFile = null;
+  let editingProductId = null;
+  let currentImageUrl = null;
+
+  // File input binding example (if you have an input[type=file] with id="image")
+  const imageInput = document.getElementById("image");
+  if (imageInput) {
+    imageInput.addEventListener("change", (e) => {
+      selectedFile = e.target.files[0] || null;
+    });
+  }
+
+  async function loadProducts() {
+    productList.innerHTML = "Loading...";
+    try {
+      const res = await fetch(`http://localhost:4000/api/${ownerSlug}/products`);
+      const contentType = res.headers.get("content-type") || "";
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Failed to load: ${res.status} ${text}`);
+      }
+      const products = contentType.includes("application/json")
+        ? await res.json()
+        : [];
+
+      productList.innerHTML = "";
+      products.forEach(product => {
+        const card = document.createElement("div");
+        card.className = "product-card";
+        card.innerHTML = `
+          <div class="all" style="display:flex;align-items:center;gap:15px;width:350px;overflow-y:auto;">
+            <img src="${product.imageUrl || ""}" style="width:90px;height:90px;object-fit:cover;border-radius:6px;"/>
+            <div class="ptext">
+              <h3>${product.productName || ""}</h3>
+              <p><strong>${product.productPrice || ""} TZS</strong></p>
+            </div>
+            <div class="buttons">
+              <button onclick="editProduct('${product._id}')">Edit</button>
+              <button onclick="deleteProduct('${product._id}')">Delete</button>
+            </div>
+          </div>
+        `;
+        productList.appendChild(card);
+      });
+    } catch (err) {
+      console.error(err);
+      productList.innerHTML = "Failed to load products.";
+    }
+  }
+
+  productForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData();
+    formData.append("productName", document.getElementById("productName").value);
+    formData.append("productDescription", document.getElementById("productDescription").value);
+    formData.append("productSize", document.getElementById("productSize").value);
+    formData.append("productBrand", document.getElementById("productBrand").value);
+    formData.append("productPrice", document.getElementById("productPrice").value);
+
+    if (selectedFile) {
+      formData.append("image", selectedFile);
+    } else if (currentImageUrl) {
+      formData.append("imageUrl", currentImageUrl);
+    }
+
+    let url = `http://localhost:4000/api/products`;
+    let method = "POST";
+
+    if (editingProductId) {
+      url = `http://localhost:4000/api/${ownerSlug}/products/${editingProductId}`;
+      method = "PUT";
+    }
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Authorization": "Bearer " + token },
+        body: formData
+      });
+
+      const contentType = res.headers.get("content-type") || "";
+      const data = contentType.includes("application/json") ? await res.json() : await res.text();
+
+      if (!res.ok) {
+        const msg = typeof data === "string" ? data : data.error || "Request failed";
+        alert(msg);
+        return;
+      }
+
+      alert(editingProductId ? "Updated!" : "Created!");
+      resetForm();
+      loadProducts();
+    } catch (err) {
+      console.error(err);
+      alert("Network error");
+    }
+  });
+
+  window.editProduct = async (id) => {
+    try {
+      const res = await fetch(`http://localhost:4000/api/${ownerSlug}/products/${id}`, {
+        headers: { "Authorization": "Bearer " + token }
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Failed to fetch product: ${res.status} ${text}`);
+      }
+      const product = await res.json();
+
+      editingProductId = id;
+
+      document.getElementById("productName").value = product.productName || "";
+      document.getElementById("productDescription").value = product.productDescription || "";
+      document.getElementById("productSize").value = product.productSize || "";
+      document.getElementById("productBrand").value = product.productBrand || "";
+      document.getElementById("productPrice").value = product.productPrice || "";
+
+      currentImageUrl = product.imageUrl || null;
+      photoArea.innerHTML = currentImageUrl
+        ? `<img src="${currentImageUrl}" style="max-width:100%;">`
+        : "Photo";
+    } catch (err) {
+      console.error(err);
+      alert("Failed to load product for edit");
+    }
+  };
+
+  window.deleteProduct = async (id) => {
+    if (!confirm("Delete this?")) return;
+    try {
+      const res = await fetch(`http://localhost:4000/api/${ownerSlug}/products/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer " + token }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error || "Delete failed");
+        return;
+      }
+      alert("Deleted");
+      loadProducts();
+    } catch (err) {
+      console.error(err);
+      alert("Network error");
+    }
+  };
+
+  function resetForm() {
+    selectedFile = null;
+    editingProductId = null;
+    currentImageUrl = null;
+    productForm.reset();
+    photoArea.innerHTML = "Photo";
+  }
+
+  loadProducts();
+</script>
+
+</body>
+</html>
