@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Create Account</title>
+    <title>Create Account(NEW)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
@@ -11,31 +12,47 @@
 /* Your original styling is untouched */
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
 body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-.account { background: white; padding: 80px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 100%; max-width: 500px; }
+.account { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 100%; max-width: 500px; }
 h1 { text-align: center; color: #333; margin-bottom: 30px; font-weight: 600; }
 label { display: block; margin-bottom: 8px; color: #555; font-weight: 500; }
-input { width: 100%; padding: 12px 15px; border: 1px solid #eaedf0; border-radius: 10px; font-size: 16px; }
-#Sbmt { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 30px; border-radius: 8px; font-size: 18px; cursor: pointer; width: 100%; margin-top: 20px; }
-.login-link{margin-top: 10px; text-align: center;}
+input { width: 100%; padding: 12px 15px; border: 2px solid #4995e2; border-radius: 8px; font-size: 16px; margin-bottom: 20px; }
+button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 15px; border-radius: 8px; font-size: 18px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; }
+.login-link { text-align: center; margin-top: 20px; font-size: 14px; color: #555; }
+.login-link a { color: #764ba2; text-decoration: none; font-weight: 500; }
+#storeLinkMessage {
+    text-align: center;
+    color: #008000;
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #008000;
+    background-color: #e6ffe6;
+    border-radius: 8px;
+    word-wrap: break-word; /* Ensure the link doesn't overflow */
+}
+#storeLinkAnchor {
+    font-weight: bold;
+}
 </style>
-
+</head>
 <body>
 
 <div class="account">
-    <h1>CREATE PROFILE</h1>
+    <h1>Kamilisha Profile Yako</h1>
+    <p id="storeLinkMessage" style="display: none;">
+        **Store Link:** <a id="storeLinkAnchor" href="#" target="_blank"></a>
+    </p>
 
     <form id="createAccountForm">
-
-        <label>First Name</label>
+        <label for="firstName">First Name</label>
         <input type="text" id="firstName" required>
 
-        <label>Last Name</label>
+        <label for="lastName">Last Name</label>
         <input type="text" id="lastName" required>
 
-        <label>Whatsapp Number</label>
+        <label for="ownerphone">Whatsapp Number (Used for Orders)</label>
         <input type="number" id="ownerphone" required>
 
-        <label>Location</label>
+        <label for="location">Location</label>
         <input type="text" id="location" required>
 
         <button id="Sbmt" type="submit">Submit</button>
@@ -47,36 +64,58 @@ input { width: 100%; padding: 12px 15px; border: 1px solid #eaedf0; border-radiu
 </div>
 
 <script>
-document.getElementById("createAccountForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
 
-    const data = {
+document.getElementById("createAccountForm").addEventListener("submit", async e => {
+  e.preventDefault();
+
+       const data = {
         firstName: document.getElementById("firstName").value.trim(),
         lastName: document.getElementById("lastName").value.trim(),
         ownerphone: document.getElementById("ownerphone").value.trim(),
         location: document.getElementById("location").value.trim()
     };
 
-    const token = localStorage.getItem("authToken");
+  const token = localStorage.getItem("authToken");
+       try {
+  const response = await fetch("http://localhost:4000/api/profile", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { "Authorization": "Bearer " + token } : {})
+ },
+    body: JSON.stringify(data)
+  });
 
-    const response = await fetch("http://localhost:4000/api/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json",
-		    "Authorization": "Bearer " + token
-	},
-        body: JSON.stringify(data)
-    });
-
-    const result = await response.json();
+     let result;
+    try {
+      result = await response.json();
+    } catch {
+      alert("Server returned invalid response format.");
+      return;
+    }
 
     if (response.ok) {
-        alert("Profile created successfully!");
-        window.location.href = "admin.html";  // redirect
+      alert(result.message || "Profile created successfully!");
+      window.location.href = "admin.html";
     } else {
-        alert(result.message);
+      alert(result.message || result.error || "Error occurred.");
     }
-});
-</script>
 
+    if (result?.user) {
+      localStorage.setItem("loggedUser", JSON.stringify(result.user));
+    }
+
+    if (result?.ownerSlug) {
+      const link = `${location.origin}/store.html?slug=${result.ownerSlug}`;
+      document.getElementById("storeLinkAnchor").href = link;
+      document.getElementById("storeLinkAnchor").innerText = link;
+      document.getElementById("storeLinkMessage").style.display = "block";
+    }
+  } catch (err) {
+    alert("Network error: " + err.message);
+  }
+});
+
+</script>
 </body>
 </html>

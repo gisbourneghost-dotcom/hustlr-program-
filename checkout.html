@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CHECKOUT PAGE</title>
+    <title>CHECKOUT PAGE(New)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -180,12 +180,14 @@ document.getElementById("Conbtn").addEventListener("click", async () => {
     };
 
     try {
-        const res = await fetch("http://localhost:4000/api/checkout", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(checkoutData)
-        });
-
+        await fetch("http://localhost:4000/api/checkout", {
+ 		 method: "POST",
+ 		 headers: { "Content-Type": "application/json" },
+		  body: JSON.stringify({
+	    productId: product._id,
+  	    SimuNambayamnunuzi: SimuNambayamnunuzi
+ 	 })
+    });
         const data = await res.json();
         if (!data.success) {
             alert("Checkout failed : " + data.error);
@@ -193,9 +195,9 @@ document.getElementById("Conbtn").addEventListener("click", async () => {
         }
 
         // 3. Redirect user to WhatsApp
-	if (data.whatsappUrl) {
+    if (data.whatsappUrl) {
         window.location.href = data.whatsappUrl;
-	} else {
+    } else {
         alert("Order placed but seller has no WhatsApp number.");
     }
 

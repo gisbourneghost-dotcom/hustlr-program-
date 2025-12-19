@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ADMIN PAGE</title>
+    <title>ADMIN PAGE(New)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
@@ -262,167 +262,173 @@ form textarea {
   </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-    const photoArea = document.getElementById("Photoarea");
-    const photoBtn = document.getElementById("Btn");
-    const productForm = document.getElementById("productForm");
-    const productList = document.getElementById("productList");
+  // Set this when rendering admin page server-side or after fetching profile:
+  // window.ownerSlug = "<owner slug here>";
+  const ownerSlug = window.ownerSlug;
+  const token = localStorage.getItem("authToken");
 
-    let selectedFile = null;
-    let editingProductId = null;
-    let currentImageUrl = null;
+  const productList = document.getElementById("productList");
+  const productForm = document.getElementById("productForm");
+  const photoArea = document.getElementById("photoArea");
 
-    const ADMIN_TOKEN = "my-secret-admin-token"; // SAME AS BACKEND checkAdminHeader
+  let selectedFile = null;
+  let editingProductId = null;
+  let currentImageUrl = null;
 
-    // File picker element
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = "image/*";
-    fileInput.name = "image";   // ✅ REQUIRED
-    fileInput.style.display = "none";
-    document.body.appendChild(fileInput);
-
-    photoBtn.addEventListener("click", () => fileInput.click());
-
-    fileInput.addEventListener("change", () => {
-        if (!fileInput.files[0]) return;
-
-        selectedFile = fileInput.files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            photoArea.innerHTML = `<img src="${e.target.result}" style="max-width:100%;">`;
-        };
-        reader.readAsDataURL(selectedFile);
+  // File input binding example (if you have an input[type=file] with id="image")
+  const imageInput = document.getElementById("image");
+  if (imageInput) {
+    imageInput.addEventListener("change", (e) => {
+      selectedFile = e.target.files[0] || null;
     });
+  }
 
-    // ---------------------- LOAD PRODUCTS ----------------------
-    async function loadProducts() {
-        productList.innerHTML = "Loading...";
+  async function loadProducts() {
+    productList.innerHTML = "Loading...";
+    try {
+      const res = await fetch(`http://localhost:4000/api/${ownerSlug}/products`);
+      const contentType = res.headers.get("content-type") || "";
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Failed to load: ${res.status} ${text}`);
+      }
+      const products = contentType.includes("application/json")
+        ? await res.json()
+        : [];
 
-        const res = await fetch("http://localhost:4000/api/products");
-        const products = await res.json();
+      productList.innerHTML = "";
+      products.forEach(product => {
+        const card = document.createElement("div");
+        card.className = "product-card";
+        card.innerHTML = `
+          <div class="all" style="display:flex;align-items:center;gap:15px;width:350px;overflow-y:auto;">
+            <img src="${product.imageUrl || ""}" style="width:90px;height:90px;object-fit:cover;border-radius:6px;"/>
+            <div class="ptext">
+              <h3>${product.productName || ""}</h3>
+              <p><strong>${product.productPrice || ""} TZS</strong></p>
+            </div>
+            <div class="buttons">
+              <button onclick="editProduct('${product._id}')">Edit</button>
+              <button onclick="deleteProduct('${product._id}')">Delete</button>
+            </div>
+          </div>
+        `;
+        productList.appendChild(card);
+      });
+    } catch (err) {
+      console.error(err);
+      productList.innerHTML = "Failed to load products.";
+    }
+  }
 
-        productList.innerHTML = "";
+  productForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-        products.forEach(product => {
-            const card = document.createElement("div");
-            card.className = "product-card";
+    const formData = new FormData();
+    formData.append("productName", document.getElementById("productName").value);
+    formData.append("productDescription", document.getElementById("productDescription").value);
+    formData.append("productSize", document.getElementById("productSize").value);
+    formData.append("productBrand", document.getElementById("productBrand").value);
+    formData.append("productPrice", document.getElementById("productPrice").value);
 
-            card.innerHTML = `
-		<div class="all" style="display: flex; align-items: center; gap: 15px; width: 350px; overflow-y: auto;">
-                <img src="${product.imageUrl}" style="width:90px;height:90px;object-fit:cover;border-radius:6px;"/>
-		<div class="ptext">
-                <h3>${product.productName}</h3>
-           <!---<p>${product.productDescription}</p>----->
-                <p><strong>${product.productPrice} TZS</strong></p>
-		</div>
-		<div class="buttons">
-                <button onclick="editProduct('${product._id}')">Edit</button>
-                <button onclick="deleteProduct('${product._id}')">Delete</button>
-		</div>
-            `;
-
-            productList.appendChild(card);
-        });
+    if (selectedFile) {
+      formData.append("image", selectedFile);
+    } else if (currentImageUrl) {
+      formData.append("imageUrl", currentImageUrl);
     }
 
-    // ---------------------- CREATE / UPDATE PRODUCT ----------------------
-    productForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
+    let url = `http://localhost:4000/api/products`;
+    let method = "POST";
 
-        const formData = new FormData();
-
-        formData.append("productName", document.getElementById("productName").value);
-        formData.append("productDescription", document.getElementById("productDescription").value);
-        formData.append("productSize", document.getElementById("productSize").value);
-        formData.append("productBrand", document.getElementById("productBrand").value);
-        formData.append("productPrice", document.getElementById("productPrice").value);
-	formData.append("ownerId", localStorage.getItem("userId"));
-
-        if (selectedFile) {
-            formData.append("image", selectedFile);
-        } else if (currentImageUrl) {
-            formData.append("imageUrl", currentImageUrl);
-        }
-
-        let url = "http://localhost:4000/api/products";
-        let method = "POST";
-
-        if (editingProductId) {
-            url = `http://localhost:4000/api/products/${editingProductId}`;
-            method = "PUT";
-        }
-
-// Get the user's JWT token from localStorage (assuming you save it as 'token' on signin)
-
-const token = localStorage.getItem("authToken"); // <-- Add this line
-	const res = await fetch(`http://localhost:4000/api/products`, {
-            method,
-            headers: {
-                "x-admin-token": ADMIN_TOKEN,
-		"Authorization": "Bearer " + token
-            },
-            body: formData
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) return alert(data.error);
-
-        alert(editingProductId ? "Updated!" : "Created!");
-
-        resetForm();
-        loadProducts();
-    });
-
-    // ---------------------- EDIT PRODUCT ----------------------
-    window.editProduct = async (id) => {
-        const res = await fetch(`http://localhost:4000/api/products/${id}`);
-        const p = await res.json();
-
-        editingProductId = id;
-
-        document.getElementById("productName").value = p.productName;
-        document.getElementById("productDescription").value = p.productDescription;
-        document.getElementById("productSize").value = p.productSize;
-        document.getElementById("productBrand").value = p.productBrand;
-        document.getElementById("productPrice").value = p.productPrice;
-
-        currentImageUrl = product.imageUrl;
-
-        photoArea.innerHTML = `<img src="${product.imageUrl}" style="max-width:100%;">`;
-    };
-
-    // ---------------------- DELETE PRODUCT ----------------------
-    window.deleteProduct = async (id) => {
-        if (!confirm("Delete this?")) return;
-
-        const res = await fetch(`http://localhost:4000/api/products/${id}`, {
-            method: "DELETE",
-            headers: { "x-admin-token": ADMIN_TOKEN }
-        });
-
-        if (res.ok) {
-            alert("Deleted");
-            loadProducts();
-        }
-    };
-
-    function resetForm() {
-        selectedFile = null;
-        editingProductId = null;
-        currentImageUrl = null;
-        productForm.reset();
-        photoArea.innerHTML = "Photo";
+    if (editingProductId) {
+      url = `http://localhost:4000/api/${ownerSlug}/products/${editingProductId}`;
+      method = "PUT";
     }
 
-    loadProducts();
-});
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Authorization": "Bearer " + token },
+        body: formData
+      });
 
-// ---------------------- TO PRODUCT PAGE----------------------
-document.getElementById("Go").addEventListener("click", function() {
-    window.location.href = "product update.html"; 
-});
+      const contentType = res.headers.get("content-type") || "";
+      const data = contentType.includes("application/json") ? await res.json() : await res.text();
+
+      if (!res.ok) {
+        const msg = typeof data === "string" ? data : data.error || "Request failed";
+        alert(msg);
+        return;
+      }
+
+      alert(editingProductId ? "Updated!" : "Created!");
+      resetForm();
+      loadProducts();
+    } catch (err) {
+      console.error(err);
+      alert("Network error");
+    }
+  });
+
+  window.editProduct = async (id) => {
+    try {
+      const res = await fetch(`http://localhost:4000/api/${ownerSlug}/products/${id}`, {
+        headers: { "Authorization": "Bearer " + token }
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Failed to fetch product: ${res.status} ${text}`);
+      }
+      const product = await res.json();
+
+      editingProductId = id;
+
+      document.getElementById("productName").value = product.productName || "";
+      document.getElementById("productDescription").value = product.productDescription || "";
+      document.getElementById("productSize").value = product.productSize || "";
+      document.getElementById("productBrand").value = product.productBrand || "";
+      document.getElementById("productPrice").value = product.productPrice || "";
+
+      currentImageUrl = product.imageUrl || null;
+      photoArea.innerHTML = currentImageUrl
+        ? `<img src="${currentImageUrl}" style="max-width:100%;">`
+        : "Photo";
+    } catch (err) {
+      console.error(err);
+      alert("Failed to load product for edit");
+    }
+  };
+
+  window.deleteProduct = async (id) => {
+    if (!confirm("Delete this?")) return;
+    try {
+      const res = await fetch(`http://localhost:4000/api/${ownerSlug}/products/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer " + token }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error || "Delete failed");
+        return;
+      }
+      alert("Deleted");
+      loadProducts();
+    } catch (err) {
+      console.error(err);
+      alert("Network error");
+    }
+  };
+
+  function resetForm() {
+    selectedFile = null;
+    editingProductId = null;
+    currentImageUrl = null;
+    productForm.reset();
+    photoArea.innerHTML = "Photo";
+  }
+
+  loadProducts();
 </script>
+
 </body>
 </html>
