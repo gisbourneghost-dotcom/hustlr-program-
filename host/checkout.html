@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CHECKOUT PAGE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+       *{
+        align-items: center;
+       }
+       label{
+        font-size: 18px;
+        font-weight: 200;
+        align-items: left;
+        gap: 50px;
+        margin-bottom: 5px;
+        display: block;
+        
+       }
+       input,
+       select{
+        color: rgb(36, 35, 35);
+        font-size: 16px;
+        width: 300px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+       }
+       body{
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 50px;
+       }
+       .container{
+        padding: 50px;
+        box-sizing: border-box;
+        align-items: center;
+        background: white;
+        border-radius: 20px;
+        justify-content: center;
+        height: auto;
+
+       }
+       .totalprice{
+        font-size: 16px;
+        padding: 40px;
+        box-sizing: border-box;
+        width: 200px;
+        height: auto;
+        background: rgb(170, 168, 168);
+        overflow: scroll;
+        }
+        .Order{
+         font-size: 16px;
+        padding: 40px;
+        box-sizing: border-box;
+        width: 400px;
+        height: auto;
+        background: rgb(241, 237, 237);
+        margin-bottom: 20px;   
+        }
+        #price{
+            color: red;
+            font-size: 20px;
+            text-align: center;
+        }
+        .buy{
+             text-align: center;
+            margin-top: 20px;
+            align-items: center;
+
+        }
+        #Conbtn{
+             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: rgb(252, 249, 249);
+            align-items: center;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 70%;
+        }
+        header{
+            text-align: center;
+            font-size: 24px;
+            font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+            margin-bottom: 15px;
+            }
+
+         #Conbtn:hover {
+        transform: scale(1.05);
+    }
+    #Demo{
+        width: 200px;
+        color: white;
+        height: auto;
+    }
+     </style>
+        </head>
+        <body>
+            <div id="checkout" class="container">
+                <header> <strong>CHECKOUT PAGE</header>
+                <div id="order" class="Order">
+                    <label> Order Summary</label>
+                    <p id="Demo"></p>
+
+		    <label style="font-size: 18px; color:red;">Total Price:</label>
+		    <p id="price"></p>
+                </div>
+
+	        <div id="form" class="Checkoutform" style="margin-bottom: 15px;">
+	            <label>Jina la mnunuzi</label>
+                    <input type="text" id="Jina la mnunuzi" placeholder="Weka jina la lako">
+               
+                    <label>Delivery Location </label>
+                    <input type="text" id="Delivery Location" placeholder="Delivery Location">
+               
+                    <label> Simu ya Mteja(no)</label>
+                    <input type="number" id="Simu ya Mteja(no)" placeholder="weka number yako ya mawasiliano">
+               
+                <div id="pay" class="Payment">
+                    <label> Payment Option</label>
+                    <select id="modalPayment" required>
+                    <option value="mpesa">M-Pesa</option> 
+                    <option value="tigo_pesa">Tigo Pesa</option>
+                    </select>
+                </div>
+                <div class="buy">
+                    <button id="Conbtn">Confirm Button</button> 
+                </div>
+            </div>
+        <script>
+// 1. Load product data from localStorage (saved from product page)
+const product = JSON.parse(localStorage.getItem("selectedProduct"));
+if (!product) {
+    document.getElementById("Demo").innerText = "No product selected!";
+} else {
+    document.getElementById("Demo").innerHTML = `
+        <strong>Product:</strong> ${product.productName}<br>
+        <strong>Price:</strong> ${product.productprice} TZS
+    `;
+    document.getElementById("price").innerText = "Total Price: " + product.price + " TZS";
+}
+
+
+// 2. Handle checkout button
+document.getElementById("Conbtn").addEventListener("click", async () => {
+
+    const Jina la mnunuzi = document.getElementById("Jina la mnunuzi").value.trim();
+    const Delivery Location = document.getElementById("Delivery Location").value.trim();
+    const Simu ya Mteja(no) = document.getElementById("Simu ya Mteja(no)").value.trim();
+   // const paymentMethod = document.getElementById("modalPayment").value;
+
+    if (!Jina la mnunuzi || !Delivery Location || !Simu ya Mteja(no)) {
+        alert("Tafadhali jaza taarifa zote ili kuweka order.");
+        return;
+    }
+
+    // Prepare data to send
+    const checkoutData = {
+        productId: product._id,
+        JIna la mnunuzi:Jina la mnunuzi,    
+        Simu ya Mteja(no):Simu ya Mteja(no),
+        DeliveryLocation: Delivery Location,
+       // paymentMethod: paymentMethod,
+        customMessage: ""
+    };
+
+    try {
+        const res = await fetch("https://YOUR-BACKEND-URL/api/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(checkoutData)
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+            alert("Checkout failed: " + data.error);
+            return;
+        }
+
+        // 3. Redirect user to WhatsApp
+        window.location.href = data.whatsappLink;
+
+    } catch (err) {
+        alert("Something went wrong.");
+        console.error(err);
+    }
+
+});
+</script>
+    </body>
+        </html>
